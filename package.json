@@ -1,0 +1,86 @@
+{
+  "name": "@ankabit/micro-framework",
+  "version": "1.0.1",
+  "description": "A lightweight, framework-agnostic micro-frontend framework with routing, modules, and event filtering",
+  "main": "dist/micro-framework.cjs.js",
+  "module": "dist/micro-framework.esm.js",
+  "browser": "dist/micro-framework.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/micro-framework.esm.js",
+      "require": "./dist/micro-framework.cjs.js",
+      "browser": "./dist/micro-framework.js"
+    },
+    "./css": "./src/micro-framework.css",
+    "./dist/*": "./dist/*"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "build:watch": "rollup -c -w",
+    "dev": "npm run build:watch & python3 -m http.server 8080 2>/dev/null || python -m http.server 8080 2>/dev/null || npx serve .",
+    "serve": "python3 -m http.server 8080 2>/dev/null || python -m http.server 8080 2>/dev/null || npx serve .",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "prepublishOnly": "npm run build && npm run lint",
+    "lint": "echo 'Linting would run here - install eslint if needed'",
+    "size": "bundlesize"
+  },
+  "keywords": [
+    "micro-frontend",
+    "framework",
+    "spa",
+    "routing",
+    "modular",
+    "javascript",
+    "modules",
+    "filter",
+    "pipeline",
+    "event-system",
+    "typescript",
+    "lightweight"
+  ],
+  "author": {
+    "name": "Aramics",
+    "email": "npm@ankabit.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ankabit/micro-framework.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ankabit/micro-framework/issues"
+  },
+  "homepage": "https://github.com/ankabit/micro-framework#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "files": [
+    "dist/",
+    "src/micro-framework.css",
+    "examples/",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rimraf": "^5.0.5",
+    "rollup": "^4.9.6"
+  },
+  "bundlesize": [
+    {
+      "path": "./dist/micro-framework.min.js",
+      "maxSize": "15 kB"
+    }
+  ]
+}

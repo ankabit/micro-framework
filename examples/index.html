@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicroFramework Demo</title>
+    <link rel="stylesheet" href="../src/micro-framework.css">
+
+    <!-- 
+        MicroFramework Comprehensive Demo
+        
+        This example demonstrates:
+        - Complete UI structure with header, sidebar, and content
+        - Multiple modules with different functionality
+        - Advanced routing with parameters and guards
+        - Event system with route change handling
+        - Form handling and validation
+        - Mobile-responsive design
+    -->
+    <style>
+        :root {
+            --mf-primary: #007bff;
+            --mf-primary-dark: #0056b3;
+            --mf-secondary: #6c757d;
+            --mf-success: #28a745;
+            --mf-danger: #dc3545;
+            --mf-warning: #ffc107;
+            --mf-info: #17a2b8;
+            --mf-light: #f8f9fa;
+            --mf-dark: #343a40;
+            --mf-white: #ffffff;
+            --mf-border-color: #dee2e6;
+            --mf-border-radius: 0.375rem;
+            --mf-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --mf-transition: all 0.15s ease-in-out;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+        }
+        
+        /* Layout Structure */
+        .mf-app {
+            display: flex;
+            min-height: 100vh;
+            background: var(--mf-light);
+        }
+        
+        .mf-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: var(--mf-white);
+            border-bottom: 1px solid var(--mf-border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 1000;
+            box-shadow: var(--mf-shadow);
+        }
+        
+        .mf-header-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--mf-primary);
+            margin: 0;
+        }
+        
+        .mf-nav-items {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .mf-nav-item {
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--mf-border-radius);
+            cursor: pointer;
+            color: var(--mf-dark);
+            transition: var(--mf-transition);
+        }
+        
+        .mf-nav-item:hover {
+            background: var(--mf-light);
+        }
+        
+        .mf-nav-item.active {
+            background: var(--mf-primary);
+            color: var(--mf-white);
+        }
+        
+        .mf-sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--header-height));
+            background: var(--mf-white);
+            border-right: 1px solid var(--mf-border-color);
+            overflow-y: auto;
+            z-index: 999;
+        }
+        
+        .mf-sidebar-content {
+            padding: 2rem;
+        }
+        
+        .mf-sidebar-content h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+            color: var(--mf-dark);
+            border-bottom: 1px solid var(--mf-border-color);
+            padding-bottom: 0.5rem;
+        }
+        
+        .mf-sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2rem 0;
+        }
+        
+        .mf-sidebar-item {
+            margin: 0;
+        }
+        
+        .mf-sidebar-link {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            color: var(--mf-dark);
+            text-decoration: none;
+            border-radius: var(--mf-border-radius);
+            cursor: pointer;
+            transition: var(--mf-transition);
+            margin-bottom: 0.25rem;
+        }
+        
+        .mf-sidebar-link:hover {
+            background: var(--mf-light);
+            color: var(--mf-primary);
+        }
+        
+        .mf-sidebar-link.active {
+            background: rgba(0, 123, 255, 0.1);
+            color: var(--mf-primary);
+            font-weight: 500;
+        }
+        
+        .mf-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            flex: 1;
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+        
+        .mf-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .mf-loading-spinner {
+            border: 4px solid var(--mf-light);
+            border-top: 4px solid var(--mf-primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: mf-spin 1s linear infinite;
+        }
+        
+        /* Demo-specific styles */
+        .demo-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            border-radius: var(--mf-border-radius);
+        }
+
+        .demo-banner h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2.5rem;
+        }
+
+        .demo-banner p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: var(--mf-white);
+            padding: 2rem;
+            border-radius: var(--mf-border-radius);
+            box-shadow: var(--mf-shadow);
+            border-left: 4px solid var(--mf-primary);
+        }
+
+        .feature-card h3 {
+            margin: 0 0 1rem 0;
+            color: var(--mf-primary);
+        }
+
+        .code-example {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: var(--mf-border-radius);
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 767.98px) {
+            .mf-sidebar {
+                width: 100%;
+                left: -100%;
+                transition: left 0.3s ease-in-out;
+            }
+            
+            .mf-sidebar.show {
+                left: 0;
+            }
+            
+            .mf-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            
+            .mf-header {
+                padding: 0 1rem;
+            }
+            
+            .mf-nav-items {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <script src="../dist/micro-framework.js"></script>
+    <script>
+        // Initialize the framework
+        const app = new MicroFramework( {
+            container: '#app',
+            router: {
+                mode: 'history',
+                // Global route guards
+                beforeEnter: ( to, from ) => {
+                    console.log( `🚦 Global navigation: ${from?.path || 'initial'} → ${to.path}` );
+
+                    // Example: Block navigation to settings without confirmation
+                    if ( to.path === '/settings' && from && !confirm( 'Are you sure you want to go to settings?' ) ) {
+                        return false;
+                    }
+
+                    return true;
+                },
+                afterEnter: ( to, from ) => {
+                    console.log( `✅ Successfully navigated to: ${to.path}` );
+
+                    // Update document title
+                    const titles = {
+                        '/': 'Home - MicroFramework Demo',
+                        '/dashboard': 'Dashboard - MicroFramework Demo',
+                        '/users': 'Users - MicroFramework Demo',
+                        '/analytics': 'Analytics - MicroFramework Demo',
+                        '/settings': 'Settings - MicroFramework Demo'
+                    };
+                    document.title = titles[to.path] || 'MicroFramework Demo';
+
+                    // Scroll to top on navigation
+                    window.scrollTo( { top: 0, behavior: 'smooth' } );
+                }
+            }
+        } );
+
+        // Create the full UI structure manually (since framework no longer provides UI structure)
+        const appContainer = document.getElementById( 'app' );
+
+        // Add complete UI structure with header, sidebar, and content area
+        const uiStructureHTML = `
+            <div class="mf-app">
+                <!-- Header -->
+                <header class="mf-header">
+                    <h1 class="mf-header-title">🚀 MicroFramework Demo</h1>
+                    <nav class="mf-nav-items">
+                        <button class="mf-nav-item active" data-route="/">Home</button>
+                        <button class="mf-nav-item" data-route="/dashboard">Dashboard</button>
+                        <button class="mf-nav-item" data-route="/users">Users</button>
+                        <button class="mf-nav-item" data-route="/settings">Settings</button>
+                    </nav>
+                </header>
+                
+                <!-- Sidebar -->
+                <aside class="mf-sidebar">
+                    <div class="mf-sidebar-content">
+                        <h3>Navigation</h3>
+                        <ul class="mf-sidebar-menu">
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link active" data-route="/">🏠 Home</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/dashboard">📊 Dashboard</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/users">👥 Users</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/analytics">📈 Analytics</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/settings">⚙️ Settings</button>
+                            </li>
+                        </ul>
+                        
+                        <h3>Examples</h3>
+                        <ul class="mf-sidebar-menu">
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/user/123">👤 User Detail</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/form-demo">📝 Form Demo</button>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+                
+                <!-- Main Content Area -->
+                <main class="mf-content">
+                    <div id="module-container"></div>
+                </main>
+                
+                <!-- Loading Spinner -->
+                <div id="loading" class="mf-loading" style="display: none;">
+                    <div class="mf-loading-spinner"></div>
+                </div>
+            </div>
+        `;
+
+        appContainer.innerHTML = uiStructureHTML;
+
+        // Update framework config to use the module container and loading spinner
+        app.config.container = document.getElementById( 'module-container' );
+        app.config.loadingSpinner = document.getElementById( 'loading' );
+
+        // Register modules
+        app.registerModule( 'home', {
+            render ( container, params, context ) {
+                container.innerHTML = `
+                    <div class="demo-banner">
+                        <h1>🚀 MicroFramework</h1>
+                        <p>A lightweight, framework-agnostic micro-frontend solution</p>
+                    </div>
+                    
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <h3>🎯 Framework Agnostic</h3>
+                            <p>Works with vanilla JS, React, Vue, Angular, or any other framework. Use what you love.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3>🛣️ Advanced Routing</h3>
+                            <p>Full SPA routing with history mode, hash mode, and hash-bang support. Dynamic routes with parameters.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3>🧩 Module System</h3>
+                            <p>Dynamic module loading, lifecycle management, and plugin architecture for maximum flexibility.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3>🎨 Base Components</h3>
+                            <p>Pre-built UI components and utilities to accelerate development. Fully customizable themes.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3>📱 Responsive</h3>
+                            <p>Mobile-first design with responsive layouts and touch-friendly interactions.</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <h3>⚡ Lightweight</h3>
+                            <p>Minimal footprint with no external dependencies. Load only what you need.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h3>Quick Start Example</h3>
+                            <div class="code-example">// Initialize the framework
+const app = new MicroFramework({
+    container: '#app',
+    mode: 'history'
+});
+
+// Register a module
+app.registerModule('dashboard', {
+    render(container) {
+        container.innerHTML = '<h1>Dashboard</h1>';
+    }
+});
+
+// Register a route
+app.registerRoute('/dashboard', 'dashboard');
+
+// Start the app
+app.start();</div>
+                            
+                            <p>Navigate through the sidebar to see the framework in action!</p>
+                            
+                            <button class="mf-btn mf-btn-primary" onclick="app.navigate('/dashboard')">
+                                Try Dashboard
+                            </button>
+                            <button class="mf-btn mf-btn-secondary" onclick="app.navigate('/users')">
+                                View Users
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        } );
+
+        app.registerModule( 'dashboard', {
+            render ( container ) {
+                container.innerHTML = `
+                    <h1>📊 Dashboard</h1>
+                    <p>Current route: <code>${app.getCurrentRoute()}</code></p>
+                    
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h3>System Overview</h3>
+                            <p>This is a dynamically loaded dashboard module with real routing.</p>
+                            
+                            <div style="background: var(--mf-light); padding: 2rem; border-radius: var(--mf-border-radius); margin: 1rem 0;">
+                                <h4>Sample Metrics</h4>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                                    <div style="text-align: center; padding: 1rem; background: var(--mf-white); border-radius: var(--mf-border-radius);">
+                                        <div style="font-size: 2rem; font-weight: bold; color: var(--mf-primary);">1,234</div>
+                                        <div style="color: var(--mf-secondary);">Users</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 1rem; background: var(--mf-white); border-radius: var(--mf-border-radius);">
+                                        <div style="font-size: 2rem; font-weight: bold; color: var(--mf-success);">56</div>
+                                        <div style="color: var(--mf-secondary);">Modules</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 1rem; background: var(--mf-white); border-radius: var(--mf-border-radius);">
+                                        <div style="font-size: 2rem; font-weight: bold; color: var(--mf-info);">89%</div>
+                                        <div style="color: var(--mf-secondary);">Performance</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button class="mf-btn mf-btn-success" onclick="alert('Dashboard action executed!')">
+                                Execute Action
+                            </button>
+                            <button class="mf-btn mf-btn-info" onclick="app.navigate('/users')">
+                                View Users
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        } );
+
+        app.registerModule( 'users', {
+            render ( container, params, context ) {
+                const users = [
+                    { id: 1, name: 'John Doe', email: 'john.doe@company.io', role: 'Admin' },
+                    { id: 2, name: 'Jane Smith', email: 'jane.smith@company.io', role: 'User' },
+                    { id: 3, name: 'Mike Johnson', email: 'mike.johnson@company.io', role: 'Editor' }
+                ];
+
+                container.innerHTML = `
+                    <h1>👥 User Management</h1>
+                    <p>Current route: <code>${app.getCurrentRoute()}</code></p>
+                    
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h3 style="margin: 0;">User List</h3>
+                                <button class="mf-btn mf-btn-primary">Add User</button>
+                            </div>
+                            
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="background: var(--mf-light);">
+                                            <th style="padding: 1rem; text-align: left; border-bottom: 1px solid var(--mf-border-color);">ID</th>
+                                            <th style="padding: 1rem; text-align: left; border-bottom: 1px solid var(--mf-border-color);">Name</th>
+                                            <th style="padding: 1rem; text-align: left; border-bottom: 1px solid var(--mf-border-color);">Email</th>
+                                            <th style="padding: 1rem; text-align: left; border-bottom: 1px solid var(--mf-border-color);">Role</th>
+                                            <th style="padding: 1rem; text-align: left; border-bottom: 1px solid var(--mf-border-color);">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${users.map( user => `
+                                            <tr>
+                                                <td style="padding: 1rem; border-bottom: 1px solid var(--mf-border-color);">${user.id}</td>
+                                                <td style="padding: 1rem; border-bottom: 1px solid var(--mf-border-color);">${user.name}</td>
+                                                <td style="padding: 1rem; border-bottom: 1px solid var(--mf-border-color);">${user.email}</td>
+                                                <td style="padding: 1rem; border-bottom: 1px solid var(--mf-border-color);">${user.role}</td>
+                                                <td style="padding: 1rem; border-bottom: 1px solid var(--mf-border-color);">
+                                                    <button class="mf-btn mf-btn-info" onclick="app.navigate('/user/${user.id}')" style="margin: 0; padding: 0.25rem 0.5rem; font-size: 0.875rem;">View</button>
+                                                </td>
+                                            </tr>
+                                        `).join( '' )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div style="margin-top: 1rem;">
+                                <button class="mf-btn mf-btn-secondary" onclick="app.navigate('/analytics')">
+                                    View Analytics
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        } );
+
+        app.registerModule( 'user-detail', {
+            render ( container, params ) {
+                const userId = params.id || 'unknown';
+                const user = { id: userId, name: `User ${userId}`, email: `user${userId}@company.io` };
+
+                container.innerHTML = `
+                    <h1>👤 User Detail</h1>
+                    <p>Current route: <code>${app.getCurrentRoute()}</code></p>
+                    <p>User ID parameter: <code>${userId}</code></p>
+                    
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h3>User Information</h3>
+                            <div class="mf-form-group">
+                                <label>Name</label>
+                                <div style="padding: 0.75rem; background: var(--mf-light); border-radius: var(--mf-border-radius);">
+                                    ${user.name}
+                                </div>
+                            </div>
+                            <div class="mf-form-group">
+                                <label>Email</label>
+                                <div style="padding: 0.75rem; background: var(--mf-light); border-radius: var(--mf-border-radius);">
+                                    ${user.email}
+                                </div>
+                            </div>
+                            <div class="mf-form-group">
+                                <label>ID</label>
+                                <div style="padding: 0.75rem; background: var(--mf-light); border-radius: var(--mf-border-radius);">
+                                    ${user.id}
+                                </div>
+                            </div>
+                            
+                            <button class="mf-btn mf-btn-primary">Edit User</button>
+                            <button class="mf-btn mf-btn-secondary" onclick="app.navigate('/users')">
+                                Back to Users
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        } );
+
+        app.registerModule( 'analytics', {
+            render ( container ) {
+                container.innerHTML = `
+                    <h1>📈 Analytics</h1>
+                    <p>Current route: <code>${app.getCurrentRoute()}</code></p>
+                    
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h3>Performance Metrics</h3>
+                            <p>This module demonstrates dynamic routing and module loading.</p>
+                            
+                            <div style="background: var(--mf-light); padding: 3rem; text-align: center; border-radius: var(--mf-border-radius); margin: 2rem 0;">
+                                <h2 style="color: var(--mf-secondary);">📊 Chart Placeholder</h2>
+                                <p>Integrate your favorite charting library here (Chart.js, D3.js, etc.)</p>
+                            </div>
+                            
+                            <button class="mf-btn mf-btn-success" onclick="alert('Analytics refreshed!')">
+                                Refresh Data
+                            </button>
+                            <button class="mf-btn mf-btn-info" onclick="app.navigate('/')">
+                                Go Home
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        } );
+
+        app.registerModule( 'settings', {
+            render ( container, params, context ) {
+                container.innerHTML = `
+                    <h1>⚙️ Settings</h1>
+                    <p>Current route: <code>${app.getCurrentRoute()}</code></p>
+                    
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h3>Application Settings</h3>
+                            
+                            <form class="mf-form" onsubmit="handleSettingsSubmit(event)">
+                                <div class="mf-form-group">
+                                    <label>Application Name</label>
+                                    <input type="text" class="mf-form-control" value="MicroFramework Demo" name="appName">
+                                </div>
+                                
+                                <div class="mf-form-group">
+                                    <label>Router Mode</label>
+                                    <select class="mf-form-control" name="routerMode">
+                                        <option value="history">History Mode</option>
+                                        <option value="hash">Hash Mode</option>
+                                        <option value="hashbang">Hash Bang Mode</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mf-form-group">
+                                    <label>Theme</label>
+                                    <select class="mf-form-control" name="theme">
+                                        <option value="default">Default</option>
+                                        <option value="dark">Dark</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mf-form-group">
+                                    <label>Description</label>
+                                    <textarea class="mf-form-control" name="description" rows="4">A powerful micro-frontend framework for building modular applications.</textarea>
+                                </div>
+                                
+                                <button type="submit" class="mf-btn mf-btn-success">Save Settings</button>
+                                <button type="button" class="mf-btn mf-btn-secondary" onclick="app.navigate('/dashboard')">
+                                    Cancel
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+        } );
+
+        app.registerModule( 'form-demo', {
+            render ( container, params, context ) {
+                container.innerHTML = `
+                    <h1>📝 Form Demo</h1>
+                    <p>Demonstrates form components and UI helpers</p>
+                    
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h3>Contact Form</h3>
+                            <form class="mf-form" onsubmit="handleFormDemo(event)">
+                                <div class="mf-form-group">
+                                    <label>Full Name *</label>
+                                    <input type="text" class="mf-form-control" name="name" required placeholder="Enter your full name">
+                                </div>
+                                
+                                <div class="mf-form-group">
+                                    <label>Email Address *</label>
+                                    <input type="email" class="mf-form-control" name="email" required placeholder="your@email.com">
+                                </div>
+                                
+                                <div class="mf-form-group">
+                                    <label>Phone Number</label>
+                                    <input type="tel" class="mf-form-control" name="phone" placeholder="+1 (555) 123-4567">
+                                </div>
+                                
+                                <div class="mf-form-group">
+                                    <label>Subject</label>
+                                    <select class="mf-form-control" name="subject">
+                                        <option>General Inquiry</option>
+                                        <option>Technical Support</option>
+                                        <option>Feature Request</option>
+                                        <option>Bug Report</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mf-form-group">
+                                    <label>Message *</label>
+                                    <textarea class="mf-form-control" name="message" rows="5" required placeholder="Tell us how we can help..."></textarea>
+                                </div>
+                                
+                                <button type="submit" class="mf-btn mf-btn-primary">Send Message</button>
+                                <button type="reset" class="mf-btn mf-btn-secondary">Reset Form</button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+        } );
+
+        // Register routes using new object-based format
+        app.registerRoute( '/', { module: 'home' } );
+        app.registerRoute( '/dashboard', { module: 'dashboard' } );
+        app.registerRoute( '/users', { module: 'users' } );
+        app.registerRoute( '/user/:id', { module: 'user-detail' } );
+        app.registerRoute( '/analytics', { module: 'analytics' } );
+        app.registerRoute( '/settings', { module: 'settings' } );
+        app.registerRoute( '/form-demo', { module: 'form-demo' } );
+
+        // Global form handlers
+        window.handleSettingsSubmit = function ( event ) {
+            event.preventDefault();
+            const formData = new FormData( event.target );
+            const data = Object.fromEntries( formData );
+            alert( `Settings saved!\n${JSON.stringify( data, null, 2 )}` );
+        };
+
+        window.handleFormDemo = function ( event ) {
+            event.preventDefault();
+            const formData = new FormData( event.target );
+            const data = Object.fromEntries( formData );
+            alert( `Form submitted!\n${JSON.stringify( data, null, 2 )}` );
+        };
+
+        // Update navigation active states
+        app.on( 'route:change', ( route ) => {
+            // Update header nav
+            document.querySelectorAll( '.mf-nav-item' ).forEach( item => {
+                item.classList.remove( 'active' );
+                const itemRoute = item.dataset.route;
+                if ( ( itemRoute === '/' && route.path === '/' ) ||
+                    ( itemRoute !== '/' && route.path.startsWith( itemRoute ) ) ) {
+                    item.classList.add( 'active' );
+                }
+            } );
+
+            // Update sidebar nav
+            document.querySelectorAll( '.mf-sidebar-link' ).forEach( item => {
+                item.classList.remove( 'active' );
+                const itemRoute = item.dataset.route;
+                if ( itemRoute === route.path ) {
+                    item.classList.add( 'active' );
+                }
+            } );
+        } );
+
+        // Make app available globally for console debugging
+        window.app = app;
+
+        // Start the framework
+        app.start();
+
+        console.log( '🎉 MicroFramework Demo loaded!' );
+        console.log( 'Try: app.navigate("/dashboard") in the console' );
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicroFramework - Separate Modules Example</title>
+    <link rel="stylesheet" href="../../src/micro-framework.css">
+
+    <style>
+        :root {
+            --mf-primary: #007bff;
+            --mf-primary-dark: #0056b3;
+            --mf-secondary: #6c757d;
+            --mf-success: #28a745;
+            --mf-danger: #dc3545;
+            --mf-warning: #ffc107;
+            --mf-info: #17a2b8;
+            --mf-light: #f8f9fa;
+            --mf-dark: #343a40;
+            --mf-white: #ffffff;
+            --mf-border-color: #dee2e6;
+            --mf-border-radius: 0.375rem;
+            --mf-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --mf-transition: all 0.15s ease-in-out;
+            --sidebar-width: 280px;
+            --header-height: 70px;
+        }
+
+        /* Layout Structure */
+        .mf-app {
+            display: flex;
+            min-height: 100vh;
+            background: var(--mf-light);
+        }
+
+        .mf-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: var(--header-height);
+            background: var(--mf-white);
+            border-bottom: 1px solid var(--mf-border-color);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 1000;
+            box-shadow: var(--mf-shadow);
+        }
+
+        .mf-header-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--mf-primary);
+            margin: 0;
+        }
+
+        .mf-nav-items {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .mf-nav-item {
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: var(--mf-border-radius);
+            cursor: pointer;
+            color: var(--mf-dark);
+            transition: var(--mf-transition);
+        }
+
+        .mf-nav-item:hover {
+            background: var(--mf-light);
+        }
+
+        .mf-nav-item.active {
+            background: var(--mf-primary);
+            color: var(--mf-white);
+        }
+
+        .mf-sidebar {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: var(--sidebar-width);
+            height: calc(100vh - var(--header-height));
+            background: var(--mf-white);
+            border-right: 1px solid var(--mf-border-color);
+            overflow-y: auto;
+            z-index: 999;
+        }
+
+        .mf-sidebar-content {
+            padding: 2rem;
+        }
+
+        .mf-sidebar-content h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+            color: var(--mf-dark);
+            border-bottom: 1px solid var(--mf-border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .mf-sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 2rem 0;
+        }
+
+        .mf-sidebar-item {
+            margin: 0;
+        }
+
+        .mf-sidebar-link {
+            display: block;
+            width: 100%;
+            text-align: left;
+            background: none;
+            border: none;
+            padding: 0.75rem 1rem;
+            color: var(--mf-dark);
+            text-decoration: none;
+            border-radius: var(--mf-border-radius);
+            cursor: pointer;
+            transition: var(--mf-transition);
+            margin-bottom: 0.25rem;
+        }
+
+        .mf-sidebar-link:hover {
+            background: var(--mf-light);
+            color: var(--mf-primary);
+        }
+
+        .mf-sidebar-link.active {
+            background: rgba(0, 123, 255, 0.1);
+            color: var(--mf-primary);
+            font-weight: 500;
+        }
+
+        .mf-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--header-height);
+            flex: 1;
+            padding: 2rem;
+            min-height: calc(100vh - var(--header-height));
+        }
+
+        .mf-loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .mf-loading-spinner {
+            border: 4px solid var(--mf-light);
+            border-top: 4px solid var(--mf-primary);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: mf-spin 1s linear infinite;
+        }
+
+        /* Demo-specific styles */
+        .demo-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            border-radius: var(--mf-border-radius);
+        }
+
+        .demo-banner h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2.5rem;
+        }
+
+        .demo-banner p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: var(--mf-white);
+            padding: 2rem;
+            border-radius: var(--mf-border-radius);
+            box-shadow: var(--mf-shadow);
+            border-left: 4px solid var(--mf-primary);
+        }
+
+        .feature-card h3 {
+            margin: 0 0 1rem 0;
+            color: var(--mf-primary);
+        }
+
+        .code-example {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: var(--mf-border-radius);
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Module loading indicator */
+        .module-status {
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: var(--mf-primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--mf-border-radius);
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .module-status.show {
+            display: block;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 767.98px) {
+            .mf-sidebar {
+                width: 100%;
+                left: -100%;
+                transition: left 0.3s ease-in-out;
+            }
+
+            .mf-sidebar.show {
+                left: 0;
+            }
+
+            .mf-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+
+            .mf-header {
+                padding: 0 1rem;
+            }
+
+            .mf-nav-items {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app"></div>
+
+    <!-- Module loading status indicator -->
+    <div id="module-status" class="module-status">
+        Loading module...
+    </div>
+
+    <!-- Load MicroFramework -->
+    <script src="../../dist/micro-framework.js"></script>
+
+    <script type="module">
+        // Initialize the framework
+        const app = new MicroFramework({
+            container: '#app',
+            router: {
+                mode: 'history',
+                // Global route guards
+                beforeEnter: (to, from) => {
+                    console.log(`🚦 Global navigation: ${from?.path || 'initial'} → ${to.path}`);
+                    return true;
+                },
+                afterEnter: (to, from) => {
+                    console.log(`✅ Successfully navigated to: ${to.path}`);
+                    
+                    // Update document title
+                    const titles = {
+                        '/': 'Home - Separate Modules Demo',
+                        '/about': 'About - Separate Modules Demo',
+                        '/dashboard': 'Dashboard - Separate Modules Demo',
+                        '/dashboard/stats': 'Stats - Separate Modules Demo',
+                        '/users': 'Users - Separate Modules Demo',
+                        '/users/create': 'Create User - Separate Modules Demo',
+                        '/settings': 'Settings - Separate Modules Demo'
+                    };
+                    document.title = titles[to.path] || 'Separate Modules Demo';
+                    
+                    // Scroll to top on navigation
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            },
+            enableEventLogging: true  // Enable event logging for this demo
+        });
+
+        // Create the UI structure manually
+        const appContainer = document.getElementById('app');
+        const uiStructureHTML = `
+            <div class="mf-app">
+                <!-- Header -->
+                <header class="mf-header">
+                    <h1 class="mf-header-title">🧩 Separate Modules Demo</h1>
+                    <nav class="mf-nav-items">
+                        <button class="mf-nav-item active" data-route="/">Home</button>
+                        <button class="mf-nav-item" data-route="/dashboard">Dashboard</button>
+                        <button class="mf-nav-item" data-route="/users">Users</button>
+                        <button class="mf-nav-item" data-route="/settings">Settings</button>
+                    </nav>
+                </header>
+                
+                <!-- Sidebar -->
+                <aside class="mf-sidebar">
+                    <div class="mf-sidebar-content">
+                        <h3>Main Pages</h3>
+                        <ul class="mf-sidebar-menu">
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link active" data-route="/">🏠 Home</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/about">ℹ️ About</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/dashboard">📊 Dashboard</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/users">👥 Users</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/settings">⚙️ Settings</button>
+                            </li>
+                        </ul>
+                        
+                        <h3>Dashboard</h3>
+                        <ul class="mf-sidebar-menu">
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/dashboard/stats">📈 Statistics</button>
+                            </li>
+                        </ul>
+                        
+                        <h3>User Management</h3>
+                        <ul class="mf-sidebar-menu">
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/users/create">➕ Create User</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/user/1">👤 John Doe</button>
+                            </li>
+                            <li class="mf-sidebar-item">
+                                <button class="mf-sidebar-link" data-route="/user/2">👤 Jane Smith</button>
+                            </li>
+                        </ul>
+                    </div>
+                </aside>
+                
+                <!-- Main Content Area -->
+                <main class="mf-content">
+                    <div id="module-container"></div>
+                </main>
+                
+                <!-- Loading Spinner -->
+                <div id="loading" class="mf-loading" style="display: none;">
+                    <div class="mf-loading-spinner"></div>
+                </div>
+            </div>
+        `;
+
+        appContainer.innerHTML = uiStructureHTML;
+
+        // Update framework config
+        app.config.container = document.getElementById('module-container');
+        app.config.loadingSpinner = document.getElementById('loading');
+
+        // Show module loading status
+        const statusIndicator = document.getElementById('module-status');
+        function showModuleStatus(message) {
+            statusIndicator.textContent = message;
+            statusIndicator.classList.add('show');
+            setTimeout(() => statusIndicator.classList.remove('show'), 2000);
+        }
+
+        // Import and register modules from separate files
+        async function loadModules() {
+            showModuleStatus('Loading modules...');
+            
+            try {
+                // Load all modules in parallel
+                const [
+                    homeModule,
+                    dashboardModule,
+                    usersModule,
+                    userDetailModule,
+                    settingsModule
+                ] = await Promise.all([
+                    import('./modules/home.js'),
+                    import('./modules/dashboard.js'),
+                    import('./modules/users.js'),
+                    import('./modules/user-detail.js'),
+                    import('./modules/settings.js')
+                ]);
+
+                console.log('📦 All modules loaded successfully');
+
+                // Register modules with the framework
+                app.registerModule('home', homeModule.default);
+                app.registerModule('dashboard', dashboardModule.default);
+                app.registerModule('users', usersModule.default);
+                app.registerModule('user-detail', userDetailModule.default);
+                app.registerModule('settings', settingsModule.default);
+
+                console.log('✅ All modules registered');
+                showModuleStatus('Modules loaded successfully!');
+
+                // Register additional routes not covered by module routes
+                app.registerRoute('/user/:id', { module: 'user-detail' });
+
+                // Start the application
+                app.start();
+                
+                console.log('🚀 MicroFramework started with separate modules!');
+
+            } catch (error) {
+                console.error('❌ Error loading modules:', error);
+                showModuleStatus('Error loading modules!');
+                
+                // Show error in the container
+                document.getElementById('module-container').innerHTML = `
+                    <div class="mf-error">
+                        <h1>Module Loading Error</h1>
+                        <p>Failed to load one or more modules:</p>
+                        <pre>${error.message}</pre>
+                        <button class="mf-btn mf-btn-primary" onclick="location.reload()">
+                            Reload Page
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Update navigation active states
+        app.on(app.constructor.EVENTS.ROUTE_CHANGE, (route) => {
+            // Update header nav
+            document.querySelectorAll('.mf-nav-item').forEach(item => {
+                item.classList.remove('active');
+                const itemRoute = item.dataset.route;
+                if ((itemRoute === '/' && route.path === '/') ||
+                    (itemRoute !== '/' && route.path.startsWith(itemRoute))) {
+                    item.classList.add('active');
+                }
+            });
+
+            // Update sidebar nav
+            document.querySelectorAll('.mf-sidebar-link').forEach(item => {
+                item.classList.remove('active');
+                const itemRoute = item.dataset.route;
+                if (itemRoute === route.path) {
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        // Listen to module events for debugging
+        app.on(app.constructor.EVENTS.MODULE_LOAD, (data) => {
+            console.log(`🔄 Module loaded: ${data.name}`);
+            showModuleStatus(`${data.name} module loaded`);
+        });
+
+        app.on(app.constructor.EVENTS.MODULE_ERROR, (error) => {
+            console.error(`❌ Module error: ${error.name}`, error.error);
+            showModuleStatus(`Error: ${error.name}`);
+        });
+
+        // Make app available globally for console debugging
+        window.app = app;
+
+        // Start loading modules
+        loadModules();
+
+        // Log helpful info
+        console.log('🎉 Separate Modules Demo initialized!');
+        console.log('📝 Try these commands in the console:');
+        console.log('  - app.navigate("/dashboard")');
+        console.log('  - app.getEventHistory()');
+        console.log('  - app.modules');
+        console.log('  - app.routes');
+    </script>
+</body>
+
+</html>

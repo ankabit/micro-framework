@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MicroFramework - NPM Usage Example</title>
+    
+    <!-- Using unpkg CDN to simulate NPM package -->
+    <link rel="stylesheet" href="https://unpkg.com/@ankabit/micro-framework@1.0.0/src/micro-framework.css">
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        
+        .example-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .example-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+        }
+        
+        #app {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="example-container">
+        <div class="example-header">
+            <h1>🚀 MicroFramework NPM Usage</h1>
+            <p>This example demonstrates how to use @aramics/micro-framework when installed via NPM</p>
+            
+            <div class="code-block">
+# Install via NPM
+npm install @ankabit/micro-framework
+
+# Or via CDN
+&lt;script src="https://unpkg.com/@ankabit/micro-framework@1.0.0/dist/micro-framework.js">&lt;/script>
+&lt;link rel="stylesheet" href="https://unpkg.com/@ankabit/micro-framework@1.0.0/src/micro-framework.css">
+            </div>
+        </div>
+        
+        <div class="nav-buttons">
+            <button class="mf-btn mf-btn-primary" data-route="/">🏠 Home</button>
+            <button class="mf-btn mf-btn-secondary" data-route="/about">ℹ️ About</button>
+            <button class="mf-btn mf-btn-success" data-route="/contact">📧 Contact</button>
+            <button class="mf-btn mf-btn-info" data-route="/demo/:id" onclick="this.dataset.route='/demo/123'">🎯 Demo with Params</button>
+        </div>
+        
+        <div id="app">
+            <!-- Framework content will be rendered here -->
+        </div>
+        
+        <div class="code-block" style="margin-top: 2rem;">
+// ES6 Import (when using bundler like Webpack, Vite, etc.)
+import MicroFramework from '@ankabit/micro-framework';
+import '@ankabit/micro-framework/css';
+
+// CommonJS Import (Node.js style)
+const MicroFramework = require('@ankabit/micro-framework');
+
+// Browser CDN Usage (this example)
+// Framework is available as window.MicroFramework
+        </div>
+    </div>
+
+    <!-- Load MicroFramework from CDN -->
+    <script src="https://unpkg.com/@ankabit/micro-framework@1.0.0/dist/micro-framework.js"></script>
+    
+    <script>
+        // Initialize framework
+        const app = new MicroFramework({
+            container: '#app',
+            router: {
+                mode: 'hash', // Using hash mode for better CDN compatibility
+                afterEnter: (to, from) => {
+                    // Update active navigation button
+                    document.querySelectorAll('.nav-buttons .mf-btn').forEach(btn => {
+                        btn.classList.remove('mf-btn-warning');
+                        if (btn.dataset.route === to.path || 
+                           (btn.dataset.route.includes(':id') && to.path.includes('/demo/'))) {
+                            btn.classList.add('mf-btn-warning');
+                        }
+                    });
+                }
+            }
+        });
+
+        // Register modules using modern syntax
+        app.registerModule('home', {
+            name: 'home',
+            render(container, params, context) {
+                container.innerHTML = `
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h2 class="mf-card-title">🏠 Welcome Home</h2>
+                            <p>This is the home module loaded dynamically by MicroFramework.</p>
+                            
+                            <h3>Framework Features:</h3>
+                            <ul>
+                                <li>✅ Dynamic module loading</li>
+                                <li>✅ SPA routing with parameters</li>
+                                <li>✅ Event system with filtering</li>
+                                <li>✅ TypeScript support</li>
+                                <li>✅ Framework agnostic</li>
+                            </ul>
+                            
+                            <button class="mf-btn mf-btn-primary" onclick="context.navigate('/about')">
+                                Learn More
+                            </button>
+                        </div>
+                    </div>
+                `;
+            },
+            
+            // Module lifecycle hooks
+            onRegister(context) {
+                console.log('Home module registered with context:', context);
+            },
+            
+            beforeMount(params, context) {
+                console.log('Home module about to mount with params:', params);
+            },
+            
+            afterMount(container, params, context) {
+                console.log('Home module mounted successfully');
+            }
+        });
+
+        app.registerModule('about', {
+            name: 'about',
+            render(container, params, context) {
+                container.innerHTML = `
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h2 class="mf-card-title">ℹ️ About MicroFramework</h2>
+                            <p>MicroFramework is a lightweight, framework-agnostic solution for building micro-frontend applications.</p>
+                            
+                            <h3>Installation Options:</h3>
+                            <div class="code-block" style="margin: 1rem 0;">
+# NPM
+npm install @aramics/micro-framework
+
+# Yarn  
+yarn add @ankabit/micro-framework
+
+# CDN
+&lt;script src="https://unpkg.com/@ankabit/micro-framework@1.0.0/dist/micro-framework.js">&lt;/script>
+                            </div>
+                            
+                            <h3>Current Route Info:</h3>
+                            <ul>
+                                <li><strong>Path:</strong> <code>${context.framework.getCurrentRoute()}</code></li>
+                                <li><strong>Module:</strong> <code>about</code></li>
+                                <li><strong>Framework Started:</strong> <code>${context.framework.isStarted}</code></li>
+                            </ul>
+                            
+                            <button class="mf-btn mf-btn-success" onclick="context.navigate('/contact')">
+                                Contact Us
+                            </button>
+                            <button class="mf-btn mf-btn-secondary" onclick="context.navigate('/')">
+                                Back Home  
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        app.registerModule('contact', {
+            name: 'contact',
+            render(container, params, context) {
+                container.innerHTML = `
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h2 class="mf-card-title">📧 Contact Form</h2>
+                            <p>Get in touch with us using the form below.</p>
+                            
+                            <form class="mf-form" onsubmit="handleContactSubmit(event)">
+                                <div class="mf-form-group">
+                                    <label>Name</label>
+                                    <input type="text" class="mf-form-control" name="name" required>
+                                </div>
+                                
+                                <div class="mf-form-group">
+                                    <label>Email</label>
+                                    <input type="email" class="mf-form-control" name="email" required>
+                                </div>
+                                
+                                <div class="mf-form-group">
+                                    <label>Message</label>
+                                    <textarea class="mf-form-control" name="message" rows="4" required></textarea>
+                                </div>
+                                
+                                <button type="submit" class="mf-btn mf-btn-primary">Send Message</button>
+                                <button type="button" class="mf-btn mf-btn-secondary" onclick="context.navigate('/')">
+                                    Cancel
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        app.registerModule('demo', {
+            name: 'demo',
+            render(container, params, context) {
+                const demoId = params.id || 'none';
+                
+                container.innerHTML = `
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h2 class="mf-card-title">🎯 Demo with Parameters</h2>
+                            <p>This demonstrates dynamic routing with URL parameters.</p>
+                            
+                            <div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin: 1rem 0;">
+                                <h4>Route Information:</h4>
+                                <ul>
+                                    <li><strong>Full Path:</strong> <code>${context.framework.getCurrentRoute()}</code></li>
+                                    <li><strong>Parameter 'id':</strong> <code>${demoId}</code></li>
+                                    <li><strong>All Params:</strong> <code>${JSON.stringify(params)}</code></li>
+                                </ul>
+                            </div>
+                            
+                            <p>Try different IDs in the URL: <code>#/demo/456</code>, <code>#/demo/test</code></p>
+                            
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0;">
+                                <button class="mf-btn mf-btn-info" onclick="context.navigate('/demo/100')">Demo 100</button>
+                                <button class="mf-btn mf-btn-info" onclick="context.navigate('/demo/200')">Demo 200</button>
+                                <button class="mf-btn mf-btn-info" onclick="context.navigate('/demo/test')">Demo Test</button>
+                            </div>
+                            
+                            <button class="mf-btn mf-btn-secondary" onclick="context.navigate('/')">
+                                Back Home
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        // Register routes - clean object-based syntax
+        app.registerRoute('/', { module: 'home' });
+        app.registerRoute('/about', { module: 'about' });
+        app.registerRoute('/contact', { module: 'contact' });
+        app.registerRoute('/demo/:id', { module: 'demo' });
+
+        // Global form handler
+        window.handleContactSubmit = function(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData);
+            
+            alert(`Message sent!\n\nName: ${data.name}\nEmail: ${data.email}\nMessage: ${data.message}`);
+            
+            // Reset form and navigate home
+            event.target.reset();
+            app.navigate('/');
+        };
+
+        // Event system demonstration
+        app.on('route:change', (route) => {
+            console.log('Route changed to:', route.path);
+        });
+
+        app.on('module:load', (data) => {
+            console.log('Module loaded:', data.name);
+        });
+
+        // Make app available for console debugging
+        window.app = app;
+
+        // Start the framework
+        app.start();
+
+        console.log('🎉 MicroFramework NPM example loaded!');
+        console.log('Available commands:');
+        console.log('- app.navigate("/about")');
+        console.log('- app.getCurrentRoute()');
+        console.log('- app.emit("custom:event", {data: "test"})');
+    </script>
+</body>
+</html>

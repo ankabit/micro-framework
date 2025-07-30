@@ -1,0 +1,48 @@
+# Development files
+.git/
+.gitignore
+node_modules/
+.env
+.env.local
+
+# Documentation and development
+docs/
+*.md
+!README.md
+!CHANGELOG.md
+
+# Build and test artifacts
+build/
+test/
+tests/
+*.test.js
+*.spec.js
+coverage/
+
+# Development tools
+.eslintrc*
+.prettierrc*
+tsconfig.json
+rollup.config.js
+webpack.config.js
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Optional npm cache
+.npm
+
+# Examples (uncomment if you don't want to include examples)
+# examples/

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom 404 Handler Demo</title>
+    <link rel="stylesheet" href="../src/micro-framework.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: #f8f9fa;
+        }
+        
+        .demo-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .demo-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .demo-section {
+            background: white;
+            padding: 2rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        #app {
+            min-height: 400px;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 1rem 0;
+        }
+        
+        .custom-404 {
+            text-align: center;
+            padding: 3rem;
+            background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+            color: white;
+            border-radius: 8px;
+        }
+        
+        .custom-404 h1 {
+            font-size: 3rem;
+            margin: 0 0 1rem 0;
+        }
+        
+        .custom-404 p {
+            font-size: 1.2rem;
+            margin: 0 0 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="demo-header">
+            <h1>🚫 Custom 404 Handler Demo</h1>
+            <p>This demo shows different ways to customize the 404 page when routes are not found.</p>
+        </div>
+        
+        <div class="demo-section">
+            <h3>Current Demo: Function Handler</h3>
+            <p>Try navigating to a non-existent route to see the custom 404 handler in action.</p>
+            
+            <div class="nav-buttons">
+                <button class="mf-btn mf-btn-primary" data-route="/">🏠 Home</button>
+                <button class="mf-btn mf-btn-secondary" data-route="/about">ℹ️ About</button>
+                <button class="mf-btn mf-btn-danger" data-route="/nonexistent">❌ Non-existent Route</button>
+                <button class="mf-btn mf-btn-warning" data-route="/also/missing">🔍 Another Missing Route</button>
+            </div>
+        </div>
+        
+        <div id="app">
+            <!-- Framework content will be rendered here -->
+        </div>
+        
+        <div class="demo-section">
+            <h3>404 Handler Options</h3>
+            <p>The framework supports three types of custom 404 handlers:</p>
+            
+            <h4>1. Function Handler (Current Demo)</h4>
+            <pre><code>notFoundHandler: (path, context) => {
+    // Custom function logic
+    context.framework.moduleContainer.innerHTML = customHTML;
+}</code></pre>
+            
+            <h4>2. Template String Handler</h4>
+            <pre><code>notFoundHandler: `
+    &lt;div class="custom-404"&gt;
+        &lt;h1&gt;Oops! Route not found&lt;/h1&gt;
+        &lt;p&gt;The path &lt;code&gt;{{path}}&lt;/code&gt; doesn't exist.&lt;/p&gt;
+    &lt;/div&gt;
+`</code></pre>
+            
+            <h4>3. Module Handler</h4>
+            <pre><code>notFoundHandler: {
+    module: 'error-page' // Load a specific module for 404s
+}</code></pre>
+        </div>
+    </div>
+
+    <!-- Load MicroFramework -->
+    <script src="../dist/micro-framework.js"></script>
+    
+    <script>
+        // Initialize framework with custom 404 handler
+        const app = new MicroFramework({
+            container: '#app',
+            router: {
+                mode: 'hash',
+                // Custom 404 handler function
+                notFoundHandler: (path, context) => {
+                    context.framework.moduleContainer.innerHTML = `
+                        <div class="custom-404">
+                            <h1>🔍 Route Not Found</h1>
+                            <p>Sorry, the route <strong>${path}</strong> doesn't exist in our system.</p>
+                            <p>This is a custom 404 handler that provides a better user experience!</p>
+                            <div style="margin-top: 2rem;">
+                                <button class="mf-btn mf-btn-primary" onclick="app.navigate('/')">
+                                    🏠 Go Home
+                                </button>
+                                <button class="mf-btn mf-btn-secondary" onclick="history.back()">
+                                    ⬅️ Go Back
+                                </button>
+                            </div>
+                            <div style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.8;">
+                                <p>💡 <strong>Tip:</strong> You can customize this page by providing your own notFoundHandler function!</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        });
+
+        // Register some basic modules
+        app.registerModule('home', {
+            name: 'home',
+            render(container) {
+                container.innerHTML = `
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h2 class="mf-card-title">🏠 Home Page</h2>
+                            <p>Welcome to the Custom 404 Handler Demo!</p>
+                            <p>This framework now supports customizable 404 error pages.</p>
+                            
+                            <h3>Try These Features:</h3>
+                            <ul>
+                                <li>Click "Non-existent Route" to see the custom 404 handler</li>
+                                <li>Try typing a random route in the URL (after the #)</li>
+                                <li>The custom handler provides better UX than the default</li>
+                            </ul>
+                            
+                            <button class="mf-btn mf-btn-danger" onclick="app.navigate('/test-404')">
+                                Test Custom 404 Handler
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        app.registerModule('about', {
+            name: 'about',
+            render(container) {
+                container.innerHTML = `
+                    <div class="mf-card">
+                        <div class="mf-card-content">
+                            <h2 class="mf-card-title">ℹ️ About This Demo</h2>
+                            <p>This demo showcases the new configurable 404 handler feature.</p>
+                            
+                            <h3>How It Works:</h3>
+                            <ol>
+                                <li>When no route matches the current path</li>
+                                <li>The router calls the custom notFoundHandler if provided</li>
+                                <li>Otherwise, it falls back to the default 404 page</li>
+                            </ol>
+                            
+                            <h3>Configuration Options:</h3>
+                            <ul>
+                                <li><strong>router.notFoundHandler</strong> - Set in router config</li>
+                                <li><strong>notFoundHandler</strong> - Set in main framework config (legacy)</li>
+                                <li>Supports functions, templates, and module handlers</li>
+                            </ul>
+                            
+                            <p>This provides much more flexibility for handling missing routes!</p>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        // Register routes
+        app.registerRoute('/', { module: 'home' });
+        app.registerRoute('/about', { module: 'about' });
+
+        // Make app available globally
+        window.app = app;
+
+        // Start the framework
+        app.start();
+
+        console.log('🎉 Custom 404 Handler Demo loaded!');
+        console.log('Try navigating to a non-existent route to see the custom handler.');
+    </script>
+</body>
+</html>

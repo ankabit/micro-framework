@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Response Collection Demo</title>
+    <link rel="stylesheet" href="../src/micro-framework.css">
+    <style>
+        :root {
+            --mf-primary: #007bff;
+            --mf-secondary: #6c757d;
+            --mf-success: #28a745;
+            --mf-danger: #dc3545;
+            --mf-warning: #ffc107;
+            --mf-info: #17a2b8;
+            --mf-light: #f8f9fa;
+            --mf-dark: #343a40;
+            --mf-white: #ffffff;
+            --mf-border-color: #dee2e6;
+            --mf-border-radius: 0.375rem;
+            --mf-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background: var(--mf-light);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .demo-section {
+            background: var(--mf-white);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: var(--mf-border-radius);
+            box-shadow: var(--mf-shadow);
+        }
+        
+        .demo-section h2 {
+            margin-top: 0;
+            color: var(--mf-primary);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+        
+        .response-display {
+            background: var(--mf-light);
+            padding: 1rem;
+            border-radius: var(--mf-border-radius);
+            margin-top: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .listener-status {
+            background: var(--mf-info);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--mf-border-radius);
+            margin: 0.5rem 0;
+            font-size: 0.875rem;
+        }
+        
+        .event-log {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: var(--mf-border-radius);
+            margin-top: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Event Response Collection Demo</h1>
+        <p>This demo shows how the enhanced emit system can collect responses from both sync and async listeners.</p>
+        
+        <div class="demo-section">
+            <h2>Mixed Sync/Async Listeners</h2>
+            <p>Multiple listeners are registered - some sync, some async. The emit will automatically handle both and collect all responses.</p>
+            
+            <div id="listeners-status"></div>
+            
+            <div class="button-group">
+                <button class="mf-btn mf-btn-primary" onclick="testMixedListeners()">
+                    Emit with Response Collection
+                </button>
+                <button class="mf-btn mf-btn-secondary" onclick="testWithoutCollection()">
+                    Emit without Collection (Fire & Forget)
+                </button>
+                <button class="mf-btn mf-btn-info" onclick="clearResponses()">
+                    Clear Responses
+                </button>
+            </div>
+            
+            <div id="mixed-responses" class="response-display">
+                Click "Emit with Response Collection" to see responses...
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>Module Communication Example</h2>
+            <p>Demonstrates how modules can communicate and get data from each other using the response system.</p>
+            
+            <div class="button-group">
+                <button class="mf-btn mf-btn-success" onclick="requestUserData()">
+                    Request User Data
+                </button>
+                <button class="mf-btn mf-btn-warning" onclick="requestSystemStats()">
+                    Request System Stats
+                </button>
+                <button class="mf-btn mf-btn-danger" onclick="requestConfiguration()">
+                    Request Configuration
+                </button>
+            </div>
+            
+            <div id="module-responses" class="response-display">
+                Click any button above to see module responses...
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>Error Handling</h2>
+            <p>Shows how the system handles errors in listeners gracefully.</p>
+            
+            <div class="button-group">
+                <button class="mf-btn mf-btn-danger" onclick="testErrorHandling()">
+                    Emit to Listeners with Errors
+                </button>
+            </div>
+            
+            <div id="error-responses" class="response-display">
+                Click above to see error handling...
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h2>Event Log</h2>
+            <p>Real-time log of all events and responses.</p>
+            <div id="event-log" class="event-log">
+                Event log will appear here...
+            </div>
+        </div>
+    </div>
+
+    <script src="../dist/micro-framework.js"></script>
+    <script>
+        // Initialize the framework
+        const app = new MicroFramework({
+            container: '#app',
+            enableEventLogging: true,
+            eventLogPrefix: '[Demo]'
+        });
+
+        // Response display elements
+        const mixedDisplay = document.getElementById('mixed-responses');
+        const moduleDisplay = document.getElementById('module-responses');
+        const errorDisplay = document.getElementById('error-responses');
+        const eventLog = document.getElementById('event-log');
+        const listenersStatus = document.getElementById('listeners-status');
+
+        // Utility function to display responses
+        function displayResponse(element, title, responses, timing) {
+            const timestamp = new Date().toLocaleTimeString();
+            element.innerHTML = `${title} (${timestamp})\n` +
+                `Execution time: ${timing}ms\n` +
+                `Responses received: ${responses.length}\n\n` +
+                JSON.stringify(responses, null, 2);
+        }
+
+        // Utility function to log events
+        function logEvent(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            eventLog.innerHTML += `[${timestamp}] ${message}\n`;
+            eventLog.scrollTop = eventLog.scrollHeight;
+        }
+
+        // Register mixed listeners (sync and async)
+        function setupMixedListeners() {
+            // Sync listener 1 - returns string
+            app.on('demo:mixed', (data) => {
+                logEvent('🔵 Sync listener 1 executed');
+                return `Sync response 1: Hello ${data?.name || 'World'}!`;
+            });
+
+            // Sync listener 2 - returns object
+            app.on('demo:mixed', (data) => {
+                logEvent('🔵 Sync listener 2 executed');
+                return {
+                    type: 'sync',
+                    id: 2,
+                    data: data,
+                    timestamp: Date.now()
+                };
+            });
+
+            // Async listener 1 - simulates API call
+            app.on('demo:mixed', async (data) => {
+                logEvent('🟡 Async listener 1 started');
+                await new Promise(resolve => setTimeout(resolve, 100));
+                logEvent('🟢 Async listener 1 completed');
+                return {
+                    type: 'async',
+                    id: 1,
+                    result: 'API data fetched',
+                    delay: 100
+                };
+            });
+
+            // Async listener 2 - simulates database query
+            app.on('demo:mixed', async (data) => {
+                logEvent('🟡 Async listener 2 started');
+                await new Promise(resolve => setTimeout(resolve, 200));
+                logEvent('🟢 Async listener 2 completed');
+                return {
+                    type: 'async',
+                    id: 2,
+                    result: 'Database query completed',
+                    delay: 200,
+                    rows: Math.floor(Math.random() * 100)
+                };
+            });
+
+            // Update status
+            listenersStatus.innerHTML = `
+                <div class="listener-status">4 listeners registered: 2 sync + 2 async</div>
+            `;
+        }
+
+        // Test mixed listeners with response collection
+        async function testMixedListeners() {
+            const startTime = Date.now();
+            logEvent('📤 Emitting demo:mixed with response collection');
+            
+            try {
+                const responses = await app.emit('demo:mixed', { 
+                    name: 'Developer',
+                    timestamp: Date.now()
+                });
+                
+                const timing = Date.now() - startTime;
+                logEvent(`📥 Received ${responses.length} responses in ${timing}ms`);
+                
+                displayResponse(mixedDisplay, 'Mixed Listeners Response', responses, timing);
+            } catch (error) {
+                logEvent(`❌ Error: ${error.message}`);
+            }
+        }
+
+        // Test without response collection (fire and forget)
+        async function testWithoutCollection() {
+            const startTime = Date.now();
+            logEvent('📤 Emitting demo:mixed without response collection');
+            
+            try {
+                const result = await app.emit('demo:mixed', { 
+                    name: 'Developer',
+                    fireAndForget: true
+                }, false); // collectResponses = false
+                
+                const timing = Date.now() - startTime;
+                logEvent(`📥 Fire and forget completed in ${timing}ms`);
+                
+                mixedDisplay.innerHTML = `Fire and Forget Mode (${new Date().toLocaleTimeString()})\n` +
+                    `Execution time: ${timing}ms\n` +
+                    `Result: ${result === undefined ? 'undefined (no responses collected)' : result}\n\n` +
+                    'No responses collected - listeners executed but results ignored.';
+            } catch (error) {
+                logEvent(`❌ Error: ${error.message}`);
+            }
+        }
+
+        // Setup module communication listeners
+        function setupModuleCommunication() {
+            // User data provider
+            app.on('request:user-data', async (params) => {
+                logEvent('👤 User data requested');
+                await new Promise(resolve => setTimeout(resolve, 50));
+                return {
+                    module: 'UserModule',
+                    users: [
+                        { id: 1, name: 'John Doe', role: 'Admin' },
+                        { id: 2, name: 'Jane Smith', role: 'User' },
+                        { id: 3, name: 'Mike Johnson', role: 'Editor' }
+                    ],
+                    total: 3
+                };
+            });
+
+            // System stats provider
+            app.on('request:system-stats', () => {
+                logEvent('📊 System stats requested');
+                return {
+                    module: 'SystemModule',
+                    stats: {
+                        uptime: '24h 15m',
+                        memory: '2.1GB / 8GB',
+                        cpu: '45%',
+                        requests: Math.floor(Math.random() * 10000)
+                    }
+                };
+            });
+
+            // Configuration provider (multiple modules respond)
+            app.on('request:configuration', () => {
+                logEvent('⚙️ Configuration requested from Module A');
+                return {
+                    module: 'ModuleA',
+                    config: { theme: 'dark', language: 'en' }
+                };
+            });
+
+            app.on('request:configuration', async () => {
+                logEvent('⚙️ Configuration requested from Module B');
+                await new Promise(resolve => setTimeout(resolve, 30));
+                return {
+                    module: 'ModuleB',
+                    config: { apiUrl: 'https://api.company.io', timeout: 5000 }
+                };
+            });
+        }
+
+        // Request user data from modules
+        async function requestUserData() {
+            const startTime = Date.now();
+            logEvent('📤 Requesting user data from modules');
+            
+            const responses = await app.emit('request:user-data', { 
+                page: 1, 
+                limit: 10 
+            });
+            
+            const timing = Date.now() - startTime;
+            displayResponse(moduleDisplay, 'User Data Response', responses, timing);
+        }
+
+        // Request system stats
+        async function requestSystemStats() {
+            const startTime = Date.now();
+            logEvent('📤 Requesting system stats');
+            
+            const responses = await app.emit('request:system-stats');
+            
+            const timing = Date.now() - startTime;
+            displayResponse(moduleDisplay, 'System Stats Response', responses, timing);
+        }
+
+        // Request configuration from multiple modules
+        async function requestConfiguration() {
+            const startTime = Date.now();
+            logEvent('📤 Requesting configuration from all modules');
+            
+            const responses = await app.emit('request:configuration');
+            
+            const timing = Date.now() - startTime;
+            displayResponse(moduleDisplay, 'Configuration Responses', responses, timing);
+        }
+
+        // Setup error handling test
+        function setupErrorHandling() {
+            // Listener that throws sync error
+            app.on('demo:errors', (data) => {
+                logEvent('❌ Sync listener throwing error');
+                throw new Error('Sync listener error');
+            });
+
+            // Listener that works fine
+            app.on('demo:errors', (data) => {
+                logEvent('✅ Sync listener working fine');
+                return 'This listener works fine';
+            });
+
+            // Async listener that throws error
+            app.on('demo:errors', async (data) => {
+                logEvent('❌ Async listener throwing error');
+                await new Promise(resolve => setTimeout(resolve, 50));
+                throw new Error('Async listener error');
+            });
+
+            // Another working async listener
+            app.on('demo:errors', async (data) => {
+                logEvent('✅ Async listener working fine');
+                await new Promise(resolve => setTimeout(resolve, 100));
+                return { status: 'success', message: 'Async listener completed' };
+            });
+        }
+
+        // Test error handling
+        async function testErrorHandling() {
+            const startTime = Date.now();
+            logEvent('📤 Testing error handling');
+            
+            const responses = await app.emit('demo:errors', { test: true });
+            
+            const timing = Date.now() - startTime;
+            displayResponse(errorDisplay, 'Error Handling Test', responses, timing);
+        }
+
+        // Clear response displays
+        function clearResponses() {
+            mixedDisplay.innerHTML = 'Responses cleared...';
+            moduleDisplay.innerHTML = 'Responses cleared...';
+            errorDisplay.innerHTML = 'Responses cleared...';
+            eventLog.innerHTML = 'Event log cleared...\n';
+        }
+
+        // Initialize demo
+        function initDemo() {
+            setupMixedListeners();
+            setupModuleCommunication();
+            setupErrorHandling();
+            
+            logEvent('🚀 Demo initialized');
+            logEvent('📝 All listeners registered');
+            
+            console.log('📋 Demo Commands Available:');
+            console.log('  - testMixedListeners()');
+            console.log('  - testWithoutCollection()');
+            console.log('  - requestUserData()');
+            console.log('  - requestSystemStats()');
+            console.log('  - requestConfiguration()');
+            console.log('  - testErrorHandling()');
+        }
+
+        // Start the demo
+        initDemo();
+        
+        // Make functions globally available for console testing
+        window.testMixedListeners = testMixedListeners;
+        window.testWithoutCollection = testWithoutCollection;
+        window.requestUserData = requestUserData;
+        window.requestSystemStats = requestSystemStats;
+        window.requestConfiguration = requestConfiguration;
+        window.testErrorHandling = testErrorHandling;
+        window.clearResponses = clearResponses;
+        window.app = app;
+    </script>
+</body>
+</html>
