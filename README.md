@@ -5,9 +5,11 @@ A lightweight, framework-agnostic micro-frontend framework with built-in routing
 ## 🚀 Features
 
 -   **Framework Agnostic** - Works with vanilla JS, React, Vue, or any other framework
+-   **Auto-Binding Navigation** - Zero-config link binding with `data-route` attributes
 -   **SPA Router** - History mode, hash mode, and hash-bang mode support
 -   **Module System** - Dynamic module loading with lifecycle management
 -   **Event Filtering** - Pipeline-based event system for data transformation
+-   **Robust Container Handling** - Automatic stale container detection and recovery
 -   **Clean Route Definition** - Object-based routes with shorthand syntax
 -   **Plugin Architecture** - Easy to extend and customize
 -   **TypeScript Support** - Full type definitions included
@@ -95,6 +97,60 @@ app.start();
 	</body>
 </html>
 ```
+
+## 🔗 Auto-Binding Navigation
+
+The framework automatically binds navigation links - no JavaScript required! Just add `data-route` attributes to any element.
+
+### Basic Usage
+
+```html
+<!-- Any element can be a navigation link -->
+<a data-route="/dashboard">Dashboard</a>
+<button data-route="/users">Users</button>
+<div data-route="/settings">Settings</div>
+
+<!-- Works with traditional links too (fallback to href) -->
+<a href="/profile" data-route>Profile</a>
+```
+
+### Configuration
+
+```javascript
+const app = new MicroFramework({
+    container: '#app',
+    
+    // Auto-binding options (all optional)
+    autoBindLinks: true,           // Enable/disable auto-binding (default: true)
+    linkSelector: '[data-route]'   // CSS selector to match (default: '[data-route]')
+});
+```
+
+### Custom Selectors
+
+```javascript
+// Use regular links
+const app = new MicroFramework({
+    linkSelector: 'a[href]' // Bind all links with href
+});
+
+// Use custom attribute
+const app = new MicroFramework({
+    linkSelector: '[data-navigate]' // <div data-navigate="/page">Page</div>
+});
+
+// Use CSS class
+const app = new MicroFramework({
+    linkSelector: '.nav-link' // <span class="nav-link" data-route="/page">Page</span>
+});
+```
+
+### How It Works
+
+- **Event Delegation**: Single click listener on document handles all navigation
+- **Dynamic Content**: Works automatically with AJAX-loaded content
+- **Performance**: Ultra-fast with minimal runtime logic (4 lines of code)
+- **Flexible**: Works with any HTML element, not just `<a>` tags
 
 ### 2. Create Your First Module
 
@@ -188,6 +244,10 @@ const app = new MicroFramework({
 	// Event system configuration
 	enableEventLogging: false, // Enable event logging for debugging
 	eventLogPrefix: "[MyApp]", // Custom log prefix
+
+	// Auto-binding configuration
+	autoBindLinks: true, // Enable automatic link binding (default: true)
+	linkSelector: '[data-route]', // CSS selector for navigation links (default: '[data-route]')
 
 	// Hooks
 	onBeforeRouteChange: null,
@@ -699,10 +759,13 @@ The framework provides a robust container handling system with automatic stale c
 Route handlers and modules can use the simplified `render()` method from the context:
 
 ```javascript
-// String content
+// String content with auto-bound navigation
 app.registerRoute('/hello', {
     handler: (params, context) => {
-        context.render('<h1>Hello World!</h1>');
+        context.render(`
+            <h1>Hello World!</h1>
+            <a data-route="/dashboard">Go to Dashboard</a>
+        `);
     }
 });
 
@@ -715,7 +778,7 @@ app.registerRoute('/component', {
     }
 });
 
-// Function for complex rendering
+// Function for complex rendering with navigation
 app.registerRoute('/complex', {
     handler: (params, context) => {
         context.render((container) => {
@@ -724,8 +787,13 @@ app.registerRoute('/complex', {
             header.textContent = 'Complex Layout';
             container.appendChild(header);
             
-            // Add event listeners, integrate with other libraries, etc.
-            container.addEventListener('click', handleClick);
+            // Auto-bound navigation links work in dynamic content
+            const nav = document.createElement('nav');
+            nav.innerHTML = `
+                <button data-route="/users">Users</button>
+                <button data-route="/settings">Settings</button>
+            `;
+            container.appendChild(nav);
         });
     }
 });
