@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Robust Container Handling** - Advanced DOM container management system
+  - Automatic stale container detection using MutationObserver
+  - Container re-initialization and recovery when DOM changes
+  - New `render()` method for simplified content updates
+  - Support for string, HTML element, and function rendering
+  - Container lifecycle events (`container:removed`, `container:recovered`, etc.)
+- **Enhanced Route Events** - Improved navigation lifecycle tracking
+  - New `ROUTE_WILL_CHANGE` event fires before navigation starts
+  - Complete route event sequence documentation
+  - Better analytics and loading indicator integration
+- **Simplified API** - Cleaner developer experience
+  - `getContainer()` method replaces `getValidContainer()`
+  - `context.render()` method available in route handlers and modules
+  - Automatic container validation and recovery built-in
 - **Custom 404 Handlers** - Configurable 404 error pages
   - Function handlers for full control over 404 rendering
   - Template string handlers with `{{path}}` placeholder
@@ -18,6 +32,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Rollup bundler configuration with multiple output formats (ESM, UMD, CommonJS, minified)
   - Source maps and TypeScript definitions automatically generated
   - Tree-shaking support for smaller bundle sizes
+
+### Enhanced
+- **Route Handlers** - Now use simplified `context.render()` API instead of direct DOM manipulation
+- **Error Handling** - Improved fallback error display when containers are unavailable
+- **Documentation** - Comprehensive container handling and event lifecycle documentation
 
 ## [1.0.0] - 2025-01-30
 

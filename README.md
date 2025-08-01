@@ -129,10 +129,10 @@ app.registerRoute("/", {
 app.registerRoute("/api/users", {
 	handler: async (params, context, route) => {
 		const users = await fetchUsers();
-		context.framework.moduleContainer.innerHTML = `
+		context.render(`
             <h1>Users API</h1>
             <pre>${JSON.stringify(users, null, 2)}</pre>
-        `;
+        `);
 	},
 });
 
@@ -296,12 +296,27 @@ app.on(EVENTS.MODULE_UNREGISTERED, (data) =>
 app.on(EVENTS.ROUTE_REGISTERED, (route) =>
 	console.log("Route registered", route)
 );
+app.on(EVENTS.ROUTE_WILL_CHANGE, (data) => 
+	console.log("Route will change", data.to.path)
+);
 app.on(EVENTS.ROUTE_ERROR, (error) => console.error("Route error", error));
 app.on(EVENTS.ROUTE_404, (data) => console.log("404 error", data));
 app.on(EVENTS.LOADING_CHANGE, (isLoading) =>
 	console.log("Loading:", isLoading)
 );
 app.on(EVENTS.ERROR, (error) => console.error("Error", error));
+app.on(EVENTS.CONTAINER_REINITIALIZED, () => 
+	console.log("Container reinitialized")
+);
+app.on(EVENTS.CONTAINER_REMOVED, () => 
+	console.log("Container removed")
+);
+app.on(EVENTS.CONTAINER_RECOVERED, () => 
+	console.log("Container recovered")
+);
+app.on(EVENTS.CONTAINER_RECOVERY_FAILED, (error) => 
+	console.error("Container recovery failed", error)
+);
 app.on(EVENTS.PLUGIN_INSTALLED, (plugin) =>
 	console.log("Plugin installed", plugin)
 );
@@ -474,13 +489,30 @@ app.registerRoute("/admin", {
 });
 ```
 
-#### Guard Execution Order
+#### Route Lifecycle & Event Order
 
-1. **Global beforeEnter** - Runs first for all routes
-2. **Route-specific beforeEnter** - Runs if global guard allows navigation
-3. Module loading and rendering
-4. **Route-specific afterEnter** - Runs first after successful navigation
-5. **Global afterEnter** - Runs last after successful navigation
+1. **`ROUTE_WILL_CHANGE` event** - Fires immediately when navigation starts
+2. **Global beforeEnter** - Runs first for all routes
+3. **Route-specific beforeEnter** - Runs if global guard allows navigation
+4. **Module loading and rendering** - Core navigation logic
+5. **Route-specific afterEnter** - Runs first after successful navigation
+6. **Global afterEnter** - Runs last after successful navigation
+7. **`ROUTE_CHANGE` event** - Fires after everything completes successfully
+
+```javascript
+// Example: Track navigation lifecycle
+app.on('route:will_change', ({ to, from, path }) => {
+    console.log(`Starting navigation from ${from?.path} to ${path}`);
+    showLoadingIndicator();
+    analytics.track('navigation_start', { to: path, from: from?.path });
+});
+
+app.on('route:change', (route) => {
+    console.log(`Navigation completed to ${route.path}`);
+    hideLoadingIndicator();
+    analytics.track('navigation_complete', { path: route.path });
+});
+```
 
 ### Custom 404 Handlers
 
@@ -494,7 +526,7 @@ const app = new MicroFramework({
     router: {
         // Function handler - full control over 404 rendering
         notFoundHandler: (path, context) => {
-            context.framework.moduleContainer.innerHTML = `
+            context.render(`
                 <div class="custom-404">
                     <h1>🔍 Page Not Found</h1>
                     <p>The route <strong>${path}</strong> doesn't exist.</p>
@@ -656,6 +688,83 @@ app.emit("user:selected", {id: 123});
 app.on("user:selected", (user) => {
 	// Handle user selection
 });
+```
+
+## 🎨 Container Rendering
+
+The framework provides a robust container handling system with automatic stale container detection and recovery.
+
+### Render API
+
+Route handlers and modules can use the simplified `render()` method from the context:
+
+```javascript
+// String content
+app.registerRoute('/hello', {
+    handler: (params, context) => {
+        context.render('<h1>Hello World!</h1>');
+    }
+});
+
+// HTML Element
+app.registerRoute('/component', {
+    handler: (params, context) => {
+        const div = document.createElement('div');
+        div.textContent = 'Dynamic component';
+        context.render(div);
+    }
+});
+
+// Function for complex rendering
+app.registerRoute('/complex', {
+    handler: (params, context) => {
+        context.render((container) => {
+            // Custom rendering logic with full container access
+            const header = document.createElement('h1');
+            header.textContent = 'Complex Layout';
+            container.appendChild(header);
+            
+            // Add event listeners, integrate with other libraries, etc.
+            container.addEventListener('click', handleClick);
+        });
+    }
+});
+```
+
+### Automatic Container Recovery
+
+The framework automatically handles scenarios where the DOM container becomes stale:
+
+- **Detection**: Monitors container availability using MutationObserver
+- **Re-initialization**: Automatically finds and re-initializes containers when needed
+- **Recovery**: Re-renders current module after container recovery
+- **Events**: Emits container lifecycle events for monitoring
+
+```javascript
+// Listen for container events
+app.on('container:removed', () => {
+    console.log('Container was removed from DOM');
+});
+
+app.on('container:recovered', () => {
+    console.log('Container successfully recovered');
+});
+
+app.on('container:recovery_failed', (error) => {
+    console.error('Container recovery failed:', error);
+});
+```
+
+### Direct Container Access
+
+For advanced use cases, you can still access the container directly:
+
+```javascript
+// Get the current container (automatically validates and re-initializes if needed)
+const container = app.getContainer();
+
+// Check if container is valid without re-initialization
+const isValid = app.isContainerValid();
 ```
 
 ## 🔌 Plugins

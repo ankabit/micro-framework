@@ -14,6 +14,7 @@ export const EVENTS = {
     
     // Route events
     ROUTE_REGISTERED: 'route:registered',
+    ROUTE_WILL_CHANGE: 'route:will_change',
     ROUTE_CHANGE: 'route:change',
     ROUTE_ERROR: 'route:error',
     ROUTE_404: 'route:404',
@@ -21,6 +22,13 @@ export const EVENTS = {
     // UI events
     LOADING_CHANGE: 'loading:change',
     ERROR: 'error',
+    
+    // Container events
+    CONTAINER_REINITIALIZED: 'container:reinitialized',
+    CONTAINER_REMOVED: 'container:removed',
+    CONTAINER_RECOVERED: 'container:recovered',
+    CONTAINER_RECOVERY_FAILED: 'container:recovery_failed',
+    CONTAINER_ERROR: 'container:error',
     
     // Plugin events
     PLUGIN_INSTALLED: 'plugin:installed'

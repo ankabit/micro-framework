@@ -153,12 +153,13 @@ export class ModuleManager {
             }
 
             // Clear container and render new module
-            this.framework.moduleContainer.innerHTML = '';
-            await module.render(this.framework.moduleContainer, params, this.framework.getContext());
+            const container = this.framework.getContainer();
+            container.innerHTML = '';
+            await module.render(container, params, this.framework.getContext());
 
             // Call afterMount hook
             if (module.afterMount) {
-                await module.afterMount(this.framework.moduleContainer, params, this.framework.getContext());
+                await module.afterMount(container, params, this.framework.getContext());
             }
 
             this.currentModule = module;

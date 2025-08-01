@@ -88,6 +88,13 @@ export class Router {
             return;
         }
 
+        // Emit will change event before any guards or handlers
+        this.framework.emit(EVENTS.ROUTE_WILL_CHANGE, { 
+            to: route, 
+            from: this.currentRoute,
+            path 
+        });
+
         // Execute global beforeEnter guard
         if (this.config.beforeEnter) {
             const result = await this.config.beforeEnter(route, this.currentRoute);
@@ -147,7 +154,7 @@ export class Router {
                 await route.handler(route.params, this.framework.getContext(), route);
             } else if (typeof route.handler === 'string') {
                 // Template handler - render string as HTML
-                this.framework.moduleContainer.innerHTML = this.processTemplate(route.handler, route.params, this.framework.getContext());
+                this.framework.render(this.processTemplate(route.handler, route.params, this.framework.getContext()));
             }
         }
         // If no handler but module is loaded, that's fine - module.render was called during loadModule
@@ -259,14 +266,14 @@ export class Router {
             } else if (typeof this.config.notFoundHandler === 'string') {
                 // String handler - render as HTML with template substitution
                 const template = this.config.notFoundHandler.replace(/\{\{path\}\}/g, path);
-                this.framework.moduleContainer.innerHTML = template;
+                this.framework.render(template);
             } else if (typeof this.config.notFoundHandler === 'object' && this.config.notFoundHandler.module) {
                 // Module handler - load a specific module for 404
                 this.framework.moduleManager.loadModule(this.config.notFoundHandler.module, { path });
             }
         } else {
             // Default 404 handler
-            this.framework.moduleContainer.innerHTML = `
+            this.framework.render(`
                 <div class="mf-error mf-error-404">
                     <h1>404 - Page Not Found</h1>
                     <p>The route <code>${path}</code> was not found.</p>
@@ -274,7 +281,7 @@ export class Router {
                         Go Home
                     </button>
                 </div>
-            `;
+            `);
         }
         
         this.framework.emit(EVENTS.ROUTE_404, { path });

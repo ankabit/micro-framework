@@ -37,6 +37,7 @@ export class MicroFramework {
         // DOM elements
         this.moduleContainer = null;  // Where modules render
         this.loadingSpinner = null;   // Optional loading spinner
+        this.containerObserver = null; // MutationObserver for container changes
 
         // State
         this.isStarted = false;
@@ -67,9 +68,58 @@ export class MicroFramework {
     }
 
     /**
+     * Validate if the current moduleContainer is still connected to the DOM
+     */
+    isContainerValid() {
+        return this.moduleContainer && 
+               this.moduleContainer.isConnected && 
+               document.contains(this.moduleContainer);
+    }
+
+    /**
+     * Get the container, re-initializing if necessary
+     */
+    getContainer() {
+        if (!this.isContainerValid()) {
+            console.warn('Container is stale, attempting to re-initialize...');
+            try {
+                this.initializeContainer();
+                this.emit(EVENTS.CONTAINER_REINITIALIZED);
+            } catch (error) {
+                console.error('Failed to re-initialize container:', error);
+                this.emit(EVENTS.CONTAINER_ERROR, error);
+                throw error;
+            }
+        }
+        return this.moduleContainer;
+    }
+
+    /**
+     * Render content to the container
+     */
+    render(content) {
+        const container = this.getContainer();
+        if (typeof content === 'string') {
+            container.innerHTML = content;
+        } else if (content instanceof HTMLElement) {
+            container.innerHTML = '';
+            container.appendChild(content);
+        } else if (typeof content === 'function') {
+            container.innerHTML = '';
+            content(container);
+        }
+    }
+
+    /**
      * Initialize the module container and optional loading spinner
      */
     initializeContainer() {
+        // Clean up existing observer
+        if (this.containerObserver) {
+            this.containerObserver.disconnect();
+            this.containerObserver = null;
+        }
+
         // Get module container
         if (typeof this.config.container === 'string') {
             this.moduleContainer = document.querySelector(this.config.container);
@@ -88,6 +138,73 @@ export class MicroFramework {
             } else {
                 this.loadingSpinner = this.config.loadingSpinner;
             }
+        }
+
+        // Set up container monitoring
+        this.setupContainerObserver();
+    }
+
+    /**
+     * Set up MutationObserver to detect container removal/changes
+     */
+    setupContainerObserver() {
+        if (!this.moduleContainer || !this.moduleContainer.parentNode) {
+            return;
+        }
+
+        this.containerObserver = new MutationObserver((mutations) => {
+            let containerRemoved = false;
+            
+            for (const mutation of mutations) {
+                // Check if our container was removed
+                for (const removedNode of mutation.removedNodes) {
+                    if (removedNode === this.moduleContainer || 
+                        (removedNode.contains && removedNode.contains(this.moduleContainer))) {
+                        containerRemoved = true;
+                        break;
+                    }
+                }
+                if (containerRemoved) break;
+            }
+
+            if (containerRemoved) {
+                console.warn('Container was removed from DOM');
+                this.emit(EVENTS.CONTAINER_REMOVED);
+                this.moduleContainer = null;
+                
+                // Attempt to recover if framework is still started
+                if (this.isStarted) {
+                    setTimeout(() => this.attemptContainerRecovery(), 100);
+                }
+            }
+        });
+
+        // Observe the parent node for child list changes
+        this.containerObserver.observe(this.moduleContainer.parentNode, {
+            childList: true,
+            subtree: true
+        });
+    }
+
+    /**
+     * Attempt to recover from container removal
+     */
+    attemptContainerRecovery() {
+        try {
+            console.log('Attempting container recovery...');
+            this.initializeContainer();
+            
+            // Re-render current module if one exists
+            const currentModule = this.moduleManager.getCurrentModule();
+            if (currentModule && currentModule.render) {
+                console.log('Re-rendering current module after container recovery');
+                currentModule.render(this.moduleContainer);
+            }
+            
+            this.emit(EVENTS.CONTAINER_RECOVERED);
+        } catch (error) {
+            console.error('Container recovery failed:', error);
+            this.emit(EVENTS.CONTAINER_RECOVERY_FAILED, error);
         }
     }
 
@@ -178,6 +295,7 @@ export class MicroFramework {
         return this.router.currentRoute;
     }
 
+
     /**
      * Show loading state
      */
@@ -197,17 +315,53 @@ export class MicroFramework {
      * Show error message
      */
     showError(message, error = null) {
-        this.moduleContainer.innerHTML = `
-            <div class="mf-error">
-                <h1>Error</h1>
-                <p>${message}</p>
-                ${error ? `<pre>${error.message}</pre>` : ''}
-                <button class="mf-btn mf-btn-primary" onclick="location.reload()">
-                    Reload
+        try {
+            this.render(`
+                <div class="mf-error">
+                    <h1>Error</h1>
+                    <p>${message}</p>
+                    ${error ? `<pre>${error.message}</pre>` : ''}
+                    <button class="mf-btn mf-btn-primary" onclick="location.reload()">
+                        Reload
+                    </button>
+                </div>
+            `);
+        } catch (containerError) {
+            console.error('Failed to show error in container:', containerError);
+            console.error('Original error:', message, error);
+            // Fallback: try to show error in document body or create alert
+            this.showFallbackError(message, error);
+        }
+        this.emit(EVENTS.ERROR, { message, error });
+    }
+
+    /**
+     * Fallback error display when container is unavailable
+     */
+    showFallbackError(message, error = null) {
+        const errorHtml = `
+            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                        background: #f8d7da; color: #721c24; padding: 20px; border: 1px solid #f5c6cb; 
+                        border-radius: 4px; z-index: 10000; max-width: 500px;">
+                <h2>MicroFramework Error</h2>
+                <p><strong>Container Error:</strong> ${message}</p>
+                ${error ? `<pre style="background: #f1f1f1; padding: 10px; border-radius: 3px;">${error.message}</pre>` : ''}
+                <button onclick="location.reload()" style="margin-top: 10px; padding: 8px 16px; 
+                        background: #dc3545; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                    Reload Page
                 </button>
             </div>
         `;
-        this.emit(EVENTS.ERROR, { message, error });
+        
+        // Try to append to body
+        if (document.body) {
+            const errorDiv = document.createElement('div');
+            errorDiv.innerHTML = errorHtml;
+            document.body.appendChild(errorDiv);
+        } else {
+            // Ultimate fallback
+            alert(`MicroFramework Error: ${message}${error ? '\n\n' + error.message : ''}`);
+        }
     }
 
     /**
@@ -217,6 +371,7 @@ export class MicroFramework {
         return {
             framework: this,
             navigate: this.navigate.bind(this),
+            render: this.render.bind(this),
             emit: this.emit.bind(this),
             filter: this.filter.bind(this),
             on: this.on.bind(this),
@@ -337,6 +492,12 @@ export class MicroFramework {
         this.router.destroy();
         document.removeEventListener('click', this.handleLinkClick);
 
+        // Disconnect container observer
+        if (this.containerObserver) {
+            this.containerObserver.disconnect();
+            this.containerObserver = null;
+        }
+
         // Destroy current module
         const currentModule = this.moduleManager.getCurrentModule();
         if (currentModule && currentModule.destroy) {
@@ -344,12 +505,17 @@ export class MicroFramework {
         }
 
         // Clear container
-        if (this.container) {
-            this.container.innerHTML = '';
+        try {
+            this.render('');
+        } catch (error) {
+            // Container already invalid during destroy, which is expected
+            console.log('Container not available during destroy - this is normal');
         }
 
         // Clear references
         this.eventListeners.clear();
+        this.moduleContainer = null;
+        this.loadingSpinner = null;
 
         this.isStarted = false;
         this.emit(EVENTS.FRAMEWORK_DESTROYED);
