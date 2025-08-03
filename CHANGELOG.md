@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2025-01-30
+
 ### Added
 - **Robust Container Handling** - Advanced DOM container management system
   - Automatic stale container detection using MutationObserver
